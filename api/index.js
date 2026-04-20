@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const GITHUB_OWNER = 'technodharam';
-const GITHUB_REPO = 'neubrutal-net-notes';
+const GITHUB_REPO = 'thenetnotes';
 const GITHUB_BRANCH = 'main';
 
 // HARDCODED SECRETS FOR DIAGNOSTIC (Concatenated to bypass scan)
