@@ -39,10 +39,6 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = async (itemId) => {
-    alert("Delete button clicked for ID: " + itemId);
-    
-    if (!window.confirm("Confirm deletion of " + itemId)) return;
-    
     const isNote = activeTab === 'list_notes';
     const endpoint = isNote ? '/api/notes' : '/api/blogs';
     
