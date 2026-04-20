@@ -21,8 +21,8 @@ const GITHUB_BRANCH = 'main';
 
 // Helper to load data from GitHub
 const getLocalData = async (filename) => {
-  const token = 'ghp_' + 'GWplTjr11WXShN5unmEPNtwfrSQGAN3PDvcC';
-  console.log(`[GitHub API] Diagnostic Fetch ${filename}. Using hardcoded token.`);
+  const token = process.env.GITHUB_TOKEN || 'ghp_' + 'GWplTjr11WXShN5unmEPNtwfrSQGAN3PDvcC';
+  console.log(`[GitHub API] Fetching ${filename}.`);
   try {
     const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
       headers: {
@@ -46,7 +46,7 @@ const getLocalData = async (filename) => {
 
 // Helper to save data to GitHub
 const saveLocalData = async (filename, data) => {
-  const token = 'ghp_' + 'GWplTjr11WXShN5unmEPNtwfrSQGAN3PDvcC';
+  const token = process.env.GITHUB_TOKEN || 'ghp_' + 'GWplTjr11WXShN5unmEPNtwfrSQGAN3PDvcC';
   try {
     // 1. Get current file SHA
     const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
@@ -93,8 +93,8 @@ const checkDbConnection = (req, res, next) => {
 // --------------------------------------------------------
 router.post('/admin/login', (req, res) => {
   const { password } = req.body;
-  const adminPassword = 'admin' + '123';
-  console.log(`[Auth] Diagnostic login. Match: ${password === adminPassword}`);
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin' + '123';
+  console.log(`[Auth] Login attempt. Match: ${password === adminPassword}`);
   
   if (password === adminPassword) {
     const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });

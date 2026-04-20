@@ -68,7 +68,11 @@ const AdminDashboard = () => {
 
     const fetchItems = async () => {
       try {
+        const isNote = activeTab === 'list_notes';
+        const endpoint = isNote ? '/api/notes' : '/api/blogs';
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+        
+        console.log(`Fetching from: ${API_BASE_URL}${endpoint}`);
         const res = await axios.get(`${API_BASE_URL}${endpoint}`);
         setItems(res.data);
       } catch (err) {
