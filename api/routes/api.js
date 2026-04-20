@@ -15,24 +15,28 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = 'technodharam';
 const GITHUB_REPO = 'neubrutal-net-notes';
 const GITHUB_BRANCH = 'main';
 
 // Helper to load data from GitHub
 const getLocalData = async (filename) => {
+  const token = process.env.GITHUB_TOKEN;
+  console.log(`[GitHub API] Fetching ${filename}. Token present: ${!!token}`);
   try {
     const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3.raw'
       }
     });
 
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      console.log(`[GitHub API] Successfully fetched ${filename}. Count: ${data.length}`);
+      return data;
     }
+    console.error(`[GitHub API] Failed to fetch ${filename}: ${response.status} ${response.statusText}`);
     return [];
   } catch (err) {
     console.error(`Error loading data from GitHub ${filename}:`, err);
@@ -42,11 +46,12 @@ const getLocalData = async (filename) => {
 
 // Helper to save data to GitHub
 const saveLocalData = async (filename, data) => {
+  const token = process.env.GITHUB_TOKEN;
   try {
     // 1. Get current file SHA
     const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`
+        'Authorization': `token ${token}`
       }
     });
 
@@ -60,7 +65,7 @@ const saveLocalData = async (filename, data) => {
     const putResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -91,6 +96,7 @@ const checkDbConnection = (req, res, next) => {
 router.post('/admin/login', (req, res) => {
   const { password } = req.body;
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  console.log(`[Auth] Login attempt. Password match: ${password === adminPassword}`);
   
   if (password === adminPassword) {
     const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1d' });
