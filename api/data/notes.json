@@ -1,12 +1,5 @@
 [
   {
-    "_id": "topic-1",
-    "title": "NDS Basics",
-    "category": "Curriculum Core",
-    "level": "Fundamentals",
-    "content": "### NDS Basics (Network Design & Standards)\n\n**Clear Definition:**\nThe fundamental architectural framework and standards used to design, deploy, and manage scalable enterprise networks. It focuses on the strategic planning of network infrastructure to meet business needs.\n\n**Key Components:**\n*   **Hierarchical Model:** Core, Distribution, and Access layers.\n*   **Design Principles:** Modularity, resiliency, and scalability.\n*   **Documentation:** Network diagrams, IP addressing schemes, and hardware standards.\n\n**Real-world Use Case:**\nArchitecting a new corporate data center from scratch, ensuring that the layout can handle future growth without requiring a complete redesign of the backbone.\n\n**Quick Fact:**\nA robust network design (NDS) starts with understanding the business requirements and traffic patterns, not by picking out hardware from a catalog."
-  },
-  {
     "_id": "topic-2",
     "title": "Basics of Networking",
     "category": "Fundamentals",
