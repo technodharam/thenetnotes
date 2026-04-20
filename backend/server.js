@@ -30,6 +30,10 @@ if (process.env.MONGODB_URI) {
   console.log('WARNING: MONGODB_URI is not defined in .env file. Database will not be connected. Please provide MONGODB_URI for full functionality.');
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+export default app;
