@@ -23,7 +23,7 @@ const GITHUB_BRANCH = 'main';
 // Helper to load data from GitHub
 const getLocalData = async (filename) => {
   try {
-    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}?ref=${GITHUB_BRANCH}`, {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
         'Accept': 'application/vnd.github.v3.raw'
@@ -44,7 +44,7 @@ const getLocalData = async (filename) => {
 const saveLocalData = async (filename, data) => {
   try {
     // 1. Get current file SHA
-    const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}?ref=${GITHUB_BRANCH}`, {
+    const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}?ref=${GITHUB_BRANCH}`, {
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`
       }
@@ -57,7 +57,7 @@ const saveLocalData = async (filename, data) => {
     }
 
     // 2. Update file
-    const putResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}`, {
+    const putResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/api/data/${filename}`, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
