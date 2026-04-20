@@ -17,21 +17,12 @@
       "destination": "backend/server.js"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "frontend/dist/assets/$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "frontend/$1"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/server.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/.*",
-      "dest": "frontend/index.html"
+      "destination": "frontend/dist/index.html"
     }
   ]
 }
