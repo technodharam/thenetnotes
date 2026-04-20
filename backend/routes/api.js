@@ -15,28 +15,65 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Helper to load local data
-const getLocalData = (filename) => {
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = 'technodharam';
+const GITHUB_REPO = 'neubrutal-net-notes';
+const GITHUB_BRANCH = 'main';
+
+// Helper to load data from GitHub
+const getLocalData = async (filename) => {
   try {
-    const filePath = path.join(__dirname, '..', 'data', filename);
-    if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}?ref=${GITHUB_BRANCH}`, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3.raw'
+      }
+    });
+
+    if (response.ok) {
+      return await response.json();
     }
     return [];
   } catch (err) {
-    console.error(`Error loading local data ${filename}:`, err);
+    console.error(`Error loading data from GitHub ${filename}:`, err);
     return [];
   }
 };
 
-// Helper to save local data
-const saveLocalData = (filename, data) => {
+// Helper to save data to GitHub
+const saveLocalData = async (filename, data) => {
   try {
-    const filePath = path.join(__dirname, '..', 'data', filename);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-    return true;
+    // 1. Get current file SHA
+    const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}?ref=${GITHUB_BRANCH}`, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`
+      }
+    });
+
+    let sha = null;
+    if (getResponse.ok) {
+      const fileData = await getResponse.json();
+      sha = fileData.sha;
+    }
+
+    // 2. Update file
+    const putResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/backend/data/${filename}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Update ${filename} via API`,
+        content: Buffer.from(JSON.stringify(data, null, 2)).toString('base64'),
+        sha: sha,
+        branch: GITHUB_BRANCH
+      })
+    });
+
+    return putResponse.ok;
   } catch (err) {
-    console.error(`Error saving local data ${filename}:`, err);
+    console.error(`Error saving data to GitHub ${filename}:`, err);
     return false;
   }
 };
@@ -72,8 +109,9 @@ router.get('/notes', checkDbConnection, async (req, res) => {
       const notes = await Note.find().sort({ createdAt: -1 });
       res.json(notes);
     } else {
-      // Demo Mode: Serve local data
-      res.json(getLocalData('notes.json'));
+      // GitHub Storage Mode
+      const notes = await getLocalData('notes.json');
+      res.json(notes);
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -99,14 +137,14 @@ router.post('/notes', authMiddleware, checkDbConnection, async (req, res) => {
       const savedNote = await newNote.save();
       res.status(201).json(savedNote);
     } else {
-      // Demo Mode: Save to local file
-      const notes = getLocalData('notes.json');
+      // GitHub Storage Mode
+      const notes = await getLocalData('notes.json');
       const newNote = { ...req.body, _id: Date.now().toString() };
       notes.push(newNote);
-      if (saveLocalData('notes.json', notes)) {
+      if (await saveLocalData('notes.json', notes)) {
         res.status(201).json(newNote);
       } else {
-        res.status(500).json({ message: 'Failed to save to local data' });
+        res.status(500).json({ message: 'Failed to save to GitHub storage' });
       }
     }
   } catch (err) {
@@ -121,13 +159,13 @@ router.put('/notes/:id', authMiddleware, checkDbConnection, async (req, res) => 
       const updatedNote = await Note.findByIdAndUpdate(req.params.id, req.body, { new: true });
       res.json(updatedNote);
     } else {
-      // Demo Mode: Update in local file
-      let notes = getLocalData('notes.json');
+      // GitHub Storage Mode
+      let notes = await getLocalData('notes.json');
       notes = notes.map(n => n._id === req.params.id ? { ...req.body, _id: req.params.id } : n);
-      if (saveLocalData('notes.json', notes)) {
+      if (await saveLocalData('notes.json', notes)) {
         res.json({ _id: req.params.id, ...req.body });
       } else {
-        res.status(500).json({ message: 'Failed to update local data' });
+        res.status(500).json({ message: 'Failed to update GitHub storage' });
       }
     }
   } catch (err) {
@@ -142,13 +180,13 @@ router.delete('/notes/:id', authMiddleware, checkDbConnection, async (req, res) 
       await Note.findByIdAndDelete(req.params.id);
       res.json({ message: 'Note deleted from database' });
     } else {
-      // Demo Mode: Delete from local file
-      const notes = getLocalData('notes.json');
+      // GitHub Storage Mode
+      const notes = await getLocalData('notes.json');
       const filtered = notes.filter(n => n._id !== req.params.id);
-      if (saveLocalData('notes.json', filtered)) {
-        res.json({ message: 'Note deleted from local data' });
+      if (await saveLocalData('notes.json', filtered)) {
+        res.json({ message: 'Note deleted from GitHub storage' });
       } else {
-        res.status(500).json({ message: 'Failed to delete from local data' });
+        res.status(500).json({ message: 'Failed to delete from GitHub storage' });
       }
     }
   } catch (err) {
@@ -166,8 +204,9 @@ router.get('/blogs', checkDbConnection, async (req, res) => {
       const blogs = await Blog.find().sort({ createdAt: -1 });
       res.json(blogs);
     } else {
-      // Demo Mode: Serve local data
-      res.json(getLocalData('blogs.json'));
+      // GitHub Storage Mode
+      const blogs = await getLocalData('blogs.json');
+      res.json(blogs);
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -193,14 +232,14 @@ router.post('/blogs', authMiddleware, checkDbConnection, async (req, res) => {
       const savedBlog = await newBlog.save();
       res.status(201).json(savedBlog);
     } else {
-      // Demo Mode: Save to local file
-      const blogs = getLocalData('blogs.json');
+      // GitHub Storage Mode
+      const blogs = await getLocalData('blogs.json');
       const newBlog = { ...req.body, _id: Date.now().toString(), createdAt: new Date().toISOString() };
       blogs.push(newBlog);
-      if (saveLocalData('blogs.json', blogs)) {
+      if (await saveLocalData('blogs.json', blogs)) {
         res.status(201).json(newBlog);
       } else {
-        res.status(500).json({ message: 'Failed to save to local data' });
+        res.status(500).json({ message: 'Failed to save to GitHub storage' });
       }
     }
   } catch (err) {
@@ -215,13 +254,13 @@ router.put('/blogs/:id', authMiddleware, checkDbConnection, async (req, res) => 
       const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true });
       res.json(updatedBlog);
     } else {
-      // Demo Mode: Update in local file
-      let blogs = getLocalData('blogs.json');
+      // GitHub Storage Mode
+      let blogs = await getLocalData('blogs.json');
       blogs = blogs.map(b => b._id === req.params.id ? { ...req.body, _id: req.params.id } : b);
-      if (saveLocalData('blogs.json', blogs)) {
+      if (await saveLocalData('blogs.json', blogs)) {
         res.json({ _id: req.params.id, ...req.body });
       } else {
-        res.status(500).json({ message: 'Failed to update local data' });
+        res.status(500).json({ message: 'Failed to update GitHub storage' });
       }
     }
   } catch (err) {
@@ -236,13 +275,13 @@ router.delete('/blogs/:id', authMiddleware, checkDbConnection, async (req, res) 
       await Blog.findByIdAndDelete(req.params.id);
       res.json({ message: 'Blog deleted from database' });
     } else {
-      // Demo Mode: Delete from local file
-      const blogs = getLocalData('blogs.json');
+      // GitHub Storage Mode
+      const blogs = await getLocalData('blogs.json');
       const filtered = blogs.filter(b => b._id !== req.params.id);
-      if (saveLocalData('blogs.json', filtered)) {
-        res.json({ message: 'Blog deleted from local data' });
+      if (await saveLocalData('blogs.json', filtered)) {
+        res.json({ message: 'Blog deleted from GitHub storage' });
       } else {
-        res.status(500).json({ message: 'Failed to delete from local data' });
+        res.status(500).json({ message: 'Failed to delete from GitHub storage' });
       }
     }
   } catch (err) {
